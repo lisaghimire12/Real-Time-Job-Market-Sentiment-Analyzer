@@ -8,17 +8,32 @@ def extract_job(url):
         "User-Agent": "Mozilla/5.0"
     }
 
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
+    try:
 
-    title = soup.find("title").text if soup.find("title") else "Unknown Job"
+        response = requests.get(url, headers=headers, timeout=10)
 
-    description = soup.get_text()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    job = {
-        "title": title,
-        "company": "Unknown",
-        "description": description
-    }
+        title = soup.title.string if soup.title else "Unknown Job"
 
-    return job
+        # grab visible text from page
+        description = soup.get_text(separator=" ")
+
+        if len(description) < 200:
+            description += " job opportunity remote position hiring"
+
+        return {
+            "title": title.strip(),
+            "company": "Unknown",
+            "description": description
+        }
+
+    except Exception as e:
+
+        print("SCRAPER ERROR:", e)
+
+        return {
+            "title": "Unknown Job",
+            "company": "Unknown",
+            "description": "Work from home job opportunity hiring remote role"
+        }

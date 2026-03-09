@@ -2,21 +2,15 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JobScope AI – Market Sentiment Analyzer</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>JobScope AI – Job Authenticity Analyzer</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
 
-/* ================= THEME ================= */
-
 :root{
 --bg:#020617;
---panel:#020617;
 --glass:#0b1224;
---card:#020617cc;
 --text:#e5e7eb;
 --accent:#38bdf8;
 --accent2:#a78bfa;
@@ -30,24 +24,7 @@ body{
 font-family:Inter;
 background:radial-gradient(circle at top,#020617,#000);
 color:var(--text);
-overflow-x:hidden;
 }
-
-/* GRID BACKGROUND */
-
-body::before{
-content:"";
-position:fixed;
-width:100%;
-height:100%;
-background-image:
-linear-gradient(rgba(56,189,248,.06) 1px, transparent 1px),
-linear-gradient(90deg, rgba(56,189,248,.06) 1px, transparent 1px);
-background-size:50px 50px;
-z-index:-1;
-}
-
-/* NAV */
 
 nav{
 padding:25px 60px;
@@ -64,8 +41,7 @@ max-width:800px;
 }
 
 .hero h1{
-font-size:64px;
-line-height:1.1;
+font-size:60px;
 }
 
 .hero span{
@@ -80,26 +56,20 @@ opacity:.8;
 /* BUTTON */
 
 .btn{
-margin-top:30px;
-padding:14px 30px;
+margin-top:25px;
+padding:14px 28px;
 border:none;
 border-radius:12px;
 font-weight:600;
 background:linear-gradient(135deg,var(--accent),var(--accent2));
 color:black;
 cursor:pointer;
-transition:.3s;
-}
-
-.btn:hover{
-transform:scale(1.05);
-box-shadow:0 0 25px var(--accent);
 }
 
 /* ANALYZER */
 
 .analyzer{
-padding:100px 60px;
+padding:80px 60px;
 text-align:center;
 }
 
@@ -120,7 +90,8 @@ margin-top:30px;
 }
 
 .spinner{
-width:45px;height:45px;
+width:45px;
+height:45px;
 border:5px solid #1e293b;
 border-top:5px solid var(--accent);
 border-radius:50%;
@@ -132,74 +103,36 @@ animation:spin 1s linear infinite;
 to{transform:rotate(360deg);}
 }
 
-/* DASHBOARD */
+/* RESULT */
 
-#dashboard{
+#result{
 display:none;
-margin-top:60px;
+margin-top:40px;
+font-size:26px;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-gap:20px;
+.real{
+color:var(--good);
+}
+
+.fake{
+color:var(--bad);
+}
+
+/* SENTIMENT PAGE */
+
+#sentimentPage{
+display:none;
+padding:80px;
+text-align:center;
 }
 
 .card{
 background:var(--glass);
-padding:25px;
+padding:30px;
 border-radius:14px;
-box-shadow:0 0 20px black;
-transition:.3s;
-}
-
-.card:hover{
-transform:translateY(-8px);
-box-shadow:0 0 25px var(--accent);
-}
-
-.big{
-font-size:28px;
-margin-top:10px;
-}
-
-/* RESULT PANEL */
-
-#resultsPanel{
-position:fixed;
-top:0;
-right:-100%;
-width:100%;
-height:100%;
-background:#020617;
-padding:40px;
-overflow:auto;
-transition:.6s;
-}
-
-#resultsPanel.active{
-right:0;
-}
-
-.jobcard{
-background:#020617;
-border:1px solid #334155;
-padding:18px;
-margin:15px 0;
-border-radius:10px;
-}
-
-/* ANIMATION */
-
-.fade{
-opacity:0;
-transform:translateY(30px);
-transition:.6s;
-}
-
-.fade.show{
-opacity:1;
-transform:translateY(0);
+max-width:600px;
+margin:auto;
 }
 
 </style>
@@ -210,124 +143,124 @@ transform:translateY(0);
 <nav>JobScope AI</nav>
 
 <section class="hero">
-<h1>Understand <span>Job Market</span><br>Before You Apply</h1>
-<p>AI-powered detection of fake job offers.</p>
+
+<h1>Detect <span>Fake Jobs</span><br>Before You Apply</h1>
+
+<p>AI powered system that verifies job authenticity and analyzes market sentiment.</p>
 
 <button class="btn"
-onclick="document.getElementById('scan').scrollIntoView({behavior:'smooth'})">
-Start Analysis
+onclick="document.getElementById('analyzer').scrollIntoView({behavior:'smooth'})">
+Start
 </button>
 
 </section>
 
 
-<section class="analyzer" id="scan">
+<section class="analyzer" id="analyzer">
 
-<h2>Paste Job Posting URL</h2><br>
+<h2>Paste Job URL</h2><br>
 
-<input id="url" placeholder="https://remoteok.com/..."><br><br>
+<input id="url" placeholder="https://remoteok.com/...">
 
-<button class="btn" onclick="analyzeJob()">
+<br>
+
+<button class="btn" onclick="checkJob()">
 Analyze Job
 </button>
 
 
+
 <div id="loader">
 <div class="spinner"></div>
-<p>Fetching & Analyzing...</p>
+<p>Analyzing job authenticity...</p>
 </div>
 
+<div id="result"></div>
 
-<div id="dashboard">
+</section>
 
-<h3>Analysis Result</h3><br>
 
-<div class="grid">
+<section id="sentimentPage">
+
+<h2>Market Sentiment Analysis</h2><br>
 
 <div class="card">
-Job Title
-<div class="big" id="title"></div>
-</div>
 
-<div class="card">
-Company
-<div class="big" id="company"></div>
-</div>
-
-<div class="card">
-Verdict
-<div class="big" id="verdict"></div>
-</div>
-
-<div class="card">
-Score
-<div class="big" id="score"></div>
-</div>
-
-</div>
-
+<p id="jobTitle"></p>
 <br>
 
-<button class="btn" onclick="openResults()">
-View Job Description
+<button class="btn" onclick="runSentiment()">
+Analyze Sentiment
 </button>
+
+<br><br>
+
+<div id="sentimentResult"></div>
 
 </div>
 
 </section>
 
 
-<div id="resultsPanel">
-
-<button class="btn" onclick="closeResults()">⬅ Back</button>
-
-<h2>Job Description</h2>
-
-<div id="desc"></div>
-
-</div>
-
-
 <script>
 
-async function analyzeJob(){
+async function checkJob(){
 
-let url=document.getElementById("url").value.trim();
+const urlInput=document.getElementById("url").value.trim();
+const loader=document.getElementById("loader");
+const result=document.getElementById("result");
+const sentimentPage=document.getElementById("sentimentPage");
+const jobTitle=document.getElementById("jobTitle");
 
-if(!url){
+if(!urlInput){
 alert("Paste job URL");
 return;
 }
 
 loader.style.display="block";
-dashboard.style.display="none";
+result.style.display="none";
+sentimentPage.style.display="none";
 
 try{
 
 const response = await fetch(
-"http://127.0.0.1:5000/analyze?url="+encodeURIComponent(url)
+"http://127.0.0.1:5000/analyze?url="+encodeURIComponent(urlInput)
 );
 
 const data = await response.json();
 
 loader.style.display="none";
-dashboard.style.display="block";
+result.style.display="block";
 
-title.innerHTML=data.title || "Unknown";
-company.innerHTML=data.company || "Unknown";
-verdict.innerHTML=data.verdict || "Unknown";
-score.innerHTML=data.score || "0";
+if(data.error){
+result.innerHTML="⚠️ "+data.error;
+result.className="fake";
+return;
+}
 
-desc.innerHTML=`<div class="jobcard fade">
-${data.description || "No description available"}
-</div>`;
+if(data.ml_prediction==="Real Job"){
 
-observe();
+result.innerHTML="✅ REAL JOB";
+result.className="real";
+
+jobTitle.innerText=data.title+" at "+data.company;
+
+setTimeout(()=>{
+sentimentPage.style.display="block";
+},1200);
+
+}
+else{
+
+result.innerHTML="❌ FAKE JOB DETECTED";
+result.className="fake";
+
+}
 
 }catch(error){
 
 loader.style.display="none";
-alert("Error connecting to backend");
+alert("Backend connection failed. Make sure Flask server is running.");
 
 console.error(error);
 
@@ -335,27 +268,27 @@ console.error(error);
 
 }
 
-function observe(){
 
-const obs=new IntersectionObserver(entries=>{
-entries.forEach(e=>{
-if(e.isIntersecting){
-e.target.classList.add("show");
+async function runSentiment(){
+
+const sentimentResult = document.getElementById("sentimentResult");
+
+sentimentResult.innerHTML = "Analyzing sentiment...";
+
+try{
+
+const response = await fetch("http://127.0.0.1:5000/sentiment");
+
+const data = await response.json();
+
+sentimentResult.innerHTML = "📊 " + data.sentiment;
+
+}catch(err){
+
+sentimentResult.innerHTML = "⚠ Sentiment analysis failed";
+
 }
-});
-});
 
-document.querySelectorAll(".fade").forEach(el=>obs.observe(el));
-
-}
-
-
-function openResults(){
-resultsPanel.classList.add("active");
-}
-
-function closeResults(){
-resultsPanel.classList.remove("active");
 }
 
 </script>
