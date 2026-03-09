@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>JobScope AI – Market Sentiment Analyzer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* ================= THEME ================= */
+
+:root{
+--bg:#020617;
+--panel:#020617;
+--glass:#0b1224;
+--card:#020617cc;
+--text:#e5e7eb;
+--accent:#38bdf8;
+--accent2:#a78bfa;
+--good:#22c55e;
+--bad:#fb7185;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+font-family:Inter;
+background:radial-gradient(circle at top,#020617,#000);
+color:var(--text);
+overflow-x:hidden;
+}
+
+/* GRID BACKGROUND */
+
+body::before{
+content:"";
+position:fixed;
+width:100%;
+height:100%;
+background-image:
+linear-gradient(rgba(56,189,248,.06) 1px, transparent 1px),
+linear-gradient(90deg, rgba(56,189,248,.06) 1px, transparent 1px);
+background-size:50px 50px;
+z-index:-1;
+}
+
+/* NAV */
+
+nav{
+padding:25px 60px;
+font-family:Orbitron;
+font-size:22px;
+color:var(--accent);
+}
+
+/* HERO */
+
+.hero{
+padding:120px 80px;
+max-width:800px;
+}
+
+.hero h1{
+font-size:64px;
+line-height:1.1;
+}
+
+.hero span{
+color:var(--accent);
+}
+
+.hero p{
+margin-top:20px;
+opacity:.8;
+}
+
+/* BUTTON */
+
+.btn{
+margin-top:30px;
+padding:14px 30px;
+border:none;
+border-radius:12px;
+font-weight:600;
+background:linear-gradient(135deg,var(--accent),var(--accent2));
+color:black;
+cursor:pointer;
+transition:.3s;
+}
+
+.btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 25px var(--accent);
+}
+
+/* ANALYZER */
+
+.analyzer{
+padding:100px 60px;
+text-align:center;
+}
+
+input{
+width:60%;
+padding:14px;
+border-radius:10px;
+background:#020617;
+border:1px solid #334155;
+color:white;
+}
+
+/* LOADER */
+
+#loader{
+display:none;
+margin-top:30px;
+}
+
+.spinner{
+width:45px;height:45px;
+border:5px solid #1e293b;
+border-top:5px solid var(--accent);
+border-radius:50%;
+margin:auto;
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+to{transform:rotate(360deg);}
+}
+
+/* DASHBOARD */
+
+#dashboard{
+display:none;
+margin-top:60px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+.card{
+background:var(--glass);
+padding:25px;
+border-radius:14px;
+box-shadow:0 0 20px black;
+transition:.3s;
+}
+
+.card:hover{
+transform:translateY(-8px);
+box-shadow:0 0 25px var(--accent);
+}
+
+.big{
+font-size:28px;
+margin-top:10px;
+}
+
+/* RESULT PANEL */
+
+#resultsPanel{
+position:fixed;
+top:0;
+right:-100%;
+width:100%;
+height:100%;
+background:#020617;
+padding:40px;
+overflow:auto;
+transition:.6s;
+}
+
+#resultsPanel.active{
+right:0;
+}
+
+.jobcard{
+background:#020617;
+border:1px solid #334155;
+padding:18px;
+margin:15px 0;
+border-radius:10px;
+}
+
+/* ANIMATION */
+
+.fade{
+opacity:0;
+transform:translateY(30px);
+transition:.6s;
+}
+
+.fade.show{
+opacity:1;
+transform:translateY(0);
+}
+
+</style>
+</head>
+
+<body>
+
+<nav>JobScope AI</nav>
+
+<section class="hero">
+<h1>Understand <span>Job Market</span><br>Before You Apply</h1>
+<p>AI-powered detection of fake job offers.</p>
+
+<button class="btn"
+onclick="document.getElementById('scan').scrollIntoView({behavior:'smooth'})">
+Start Analysis
+</button>
+
+</section>
+
+
+<section class="analyzer" id="scan">
+
+<h2>Paste Job Posting URL</h2><br>
+
+<input id="url" placeholder="https://remoteok.com/..."><br><br>
+
+<button class="btn" onclick="analyzeJob()">
+Analyze Job
+</button>
+
+
+<div id="loader">
+<div class="spinner"></div>
+<p>Fetching & Analyzing...</p>
+</div>
+
+
+<div id="dashboard">
+
+<h3>Analysis Result</h3><br>
+
+<div class="grid">
+
+<div class="card">
+Job Title
+<div class="big" id="title"></div>
+</div>
+
+<div class="card">
+Company
+<div class="big" id="company"></div>
+</div>
+
+<div class="card">
+Verdict
+<div class="big" id="verdict"></div>
+</div>
+
+<div class="card">
+Score
+<div class="big" id="score"></div>
+</div>
+
+</div>
+
+<br>
+
+<button class="btn" onclick="openResults()">
+View Job Description
+</button>
+
+</div>
+
+</section>
+
+
+<div id="resultsPanel">
+
+<button class="btn" onclick="closeResults()">⬅ Back</button>
+
+<h2>Job Description</h2>
+
+<div id="desc"></div>
+
+</div>
+
+
+<script>
+
+async function analyzeJob(){
+
+let url=document.getElementById("url").value.trim();
+
+if(!url){
+alert("Paste job URL");
+return;
+}
+
+loader.style.display="block";
+dashboard.style.display="none";
+
+try{
+
+const response = await fetch(
+"http://127.0.0.1:5000/analyze?url="+encodeURIComponent(url)
+);
+
+const data = await response.json();
+
+loader.style.display="none";
+dashboard.style.display="block";
+
+title.innerHTML=data.title || "Unknown";
+company.innerHTML=data.company || "Unknown";
+verdict.innerHTML=data.verdict || "Unknown";
+score.innerHTML=data.score || "0";
+
+desc.innerHTML=`<div class="jobcard fade">
+${data.description || "No description available"}
+</div>`;
+
+observe();
+
+}catch(error){
+
+loader.style.display="none";
+alert("Error connecting to backend");
+
+console.error(error);
+
+}
+
+}
+
+function observe(){
+
+const obs=new IntersectionObserver(entries=>{
+entries.forEach(e=>{
+if(e.isIntersecting){
+e.target.classList.add("show");
+}
+});
+});
+
+document.querySelectorAll(".fade").forEach(el=>obs.observe(el));
+
+}
+
+
+function openResults(){
+resultsPanel.classList.add("active");
+}
+
+function closeResults(){
+resultsPanel.classList.remove("active");
+}
+
+</script>
+
+</body>
+</html>
